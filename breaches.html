@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Breach Search — Breach Signal</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='28'>⚡</text></svg>">
+  <link rel="stylesheet" href="/static/css/portal.css">
+  <style>
+    /* ── Layout ── */
+    .search-wrap { max-width: 1200px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+
+    /* ── Filter bar ── */
+    .filter-form {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .filter-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .75rem;
+      align-items: flex-end;
+    }
+    .filter-group { display: flex; flex-direction: column; gap: .3rem; }
+    .filter-group label {
+      font-size: .72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: #64748b;
+    }
+    .filter-group input,
+    .filter-group select {
+      height: 38px;
+      padding: 0 .75rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 7px;
+      font-size: .88rem;
+      color: #0f172a;
+      background: #f8fafc;
+      min-width: 140px;
+    }
+    .filter-group input:focus,
+    .filter-group select:focus {
+      outline: none;
+      border-color: #818cf8;
+      background: #fff;
+    }
+    .filter-group--grow { flex: 1; min-width: 180px; }
+    .filter-group input[type="range"] {
+      height: auto;
+      padding: .4rem 0;
+      background: transparent;
+      border: none;
+      width: 120px;
+    }
+    .severity-val {
+      font-size: .8rem;
+      font-weight: 700;
+      color: #4f46e5;
+      min-width: 14px;
+      text-align: right;
+    }
+    .filter-actions { display: flex; gap: .5rem; align-items: flex-end; margin-left: auto; }
+    .btn-search {
+      height: 38px;
+      padding: 0 1.2rem;
+      background: #4f46e5;
+      color: #fff;
+      border: none;
+      border-radius: 7px;
+      font-size: .88rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-search:hover { background: #4338ca; }
+    .btn-reset {
+      height: 38px;
+      padding: 0 .9rem;
+      background: transparent;
+      color: #64748b;
+      border: 1px solid #e2e8f0;
+      border-radius: 7px;
+      font-size: .88rem;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+    }
+    .btn-reset:hover { border-color: #94a3b8; color: #0f172a; }
+
+    /* ── Results header ── */
+    .results-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: .85rem;
+      flex-wrap: wrap;
+      gap: .5rem;
+    }
+    .results-count {
+      font-size: .9rem;
+      color: #64748b;
+    }
+    .results-count strong { color: #0f172a; }
+    .btn-export {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      height: 34px;
+      padding: 0 1rem;
+      background: #f1f5f9;
+      color: #334155;
+      border: 1px solid #e2e8f0;
+      border-radius: 7px;
+      font-size: .82rem;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .btn-export:hover { background: #e2e8f0; }
+
+    /* ── Table ── */
+    .table-wrap {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      overflow: hidden;
+      overflow-x: auto;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: .87rem; }
+    thead { background: #f8fafc; }
+    th {
+      padding: .75rem 1rem;
+      text-align: left;
+      font-size: .72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: #64748b;
+      border-bottom: 1px solid #e2e8f0;
+      white-space: nowrap;
+    }
+    td {
+      padding: .7rem 1rem;
+      border-bottom: 1px solid #f1f5f9;
+      color: #334155;
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafafa; }
+    .td-company { font-weight: 600; color: #0f172a; max-width: 200px; }
+    .td-company a { color: inherit; text-decoration: none; }
+    .td-company a:hover { color: #4f46e5; text-decoration: underline; }
+
+    /* Severity badge */
+    .sev {
+      display: inline-block;
+      width: 28px;
+      height: 20px;
+      line-height: 20px;
+      text-align: center;
+      border-radius: 4px;
+      font-size: .78rem;
+      font-weight: 700;
+    }
+    .sev-low    { background: #dcfce7; color: #166534; }
+    .sev-medium { background: #fef9c3; color: #854d0e; }
+    .sev-high   { background: #fee2e2; color: #991b1b; }
+    .sev-critical { background: #991b1b; color: #fff; }
+
+    .tag {
+      display: inline-block;
+      font-size: .72rem;
+      padding: .15rem .45rem;
+      border-radius: 4px;
+      background: #f1f5f9;
+      color: #475569;
+      margin: .1rem .1rem 0 0;
+    }
+
+    /* ── Pagination ── */
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: .4rem;
+      margin-top: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .page-btn {
+      min-width: 36px;
+      height: 36px;
+      padding: 0 .6rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 7px;
+      background: #fff;
+      color: #334155;
+      font-size: .88rem;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .page-btn:hover:not(.page-btn--active):not(.page-btn--disabled) {
+      border-color: #818cf8;
+      color: #4f46e5;
+    }
+    .page-btn--active {
+      background: #4f46e5;
+      border-color: #4f46e5;
+      color: #fff;
+      font-weight: 700;
+    }
+    .page-btn--disabled { opacity: .4; pointer-events: none; }
+
+    /* ── Empty / error states ── */
+    .state-empty {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: #94a3b8;
+    }
+    .state-empty p { margin: .5rem 0 0; font-size: .9rem; }
+    .state-error {
+      background: #fff1f2;
+      border: 1px solid #fecdd3;
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      color: #9f1239;
+      font-size: .9rem;
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Authenticated nav ── -->
+<nav class="portal-nav">
+  <div class="nav-inner">
+    <a href="/portal/dashboard" class="nav-logo">Breach<span class="signal">Signal</span></a>
+    <div class="nav-right">
+      <a href="/portal/breaches" class="nav-link" style="color:#4f46e5;font-weight:600;">Breaches</a>
+      <span class="nav-link" style="color:#94a3b8;cursor:default;">{{ email }}</span>
+      <a href="/auth/logout" class="nav-link">Sign out</a>
+    </div>
+  </div>
+</nav>
+
+<main class="main-content">
+<div class="search-wrap">
+
+  {% if error %}
+  <div class="state-error">⚠ {{ error }}</div>
+  {% endif %}
+
+  <!-- ── Filter form ── -->
+  <form class="filter-form" method="get" action="/portal/breaches" id="search-form">
+    <div class="filter-row">
+
+      <div class="filter-group filter-group--grow">
+        <label for="q">Company name</label>
+        <input type="text" id="q" name="q" value="{{ q }}"
+               placeholder="Search company…" autocomplete="off">
+      </div>
+
+      <div class="filter-group">
+        <label for="industry">Industry</label>
+        <select id="industry" name="industry">
+          <option value="">All industries</option>
+          {% for ind in industries %}
+          <option value="{{ ind }}" {% if industry == ind %}selected{% endif %}>{{ ind }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="country">Country</label>
+        <select id="country" name="country">
+          <option value="">All countries</option>
+          {% for c in countries %}
+          <option value="{{ c }}" {% if country == c %}selected{% endif %}>{{ c }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="date_from">From date</label>
+        <input type="date" id="date_from" name="date_from" value="{{ date_from }}">
+      </div>
+
+      <div class="filter-group">
+        <label for="date_to">To date</label>
+        <input type="date" id="date_to" name="date_to" value="{{ date_to }}">
+      </div>
+
+      <div class="filter-group">
+        <label>Min severity: <span class="severity-val" id="sev-val">{{ severity_min }}</span></label>
+        <input type="range" id="severity_min" name="severity_min"
+               min="1" max="10" value="{{ severity_min }}"
+               oninput="document.getElementById('sev-val').textContent=this.value">
+      </div>
+
+      <div class="filter-actions">
+        <button type="submit" class="btn-search">Search</button>
+        <a href="/portal/breaches" class="btn-reset">Reset</a>
+      </div>
+
+    </div>
+  </form>
+
+  <!-- ── Results header ── -->
+  <div class="results-header">
+    <p class="results-count">
+      {% if total > 0 %}
+        Showing <strong>{{ (page - 1) * page_size + 1 }}–{{ [(page - 1) * page_size + rows|length, total] | min }}</strong>
+        of <strong>{{ total }}</strong> breach{{ 'es' if total != 1 else '' }}
+      {% elif not error %}
+        No results found
+      {% endif %}
+    </p>
+    {% if total > 0 %}
+    <a href="/portal/breaches/export?q={{ q }}&industry={{ industry }}&country={{ country }}&date_from={{ date_from }}&date_to={{ date_to }}&severity_min={{ severity_min }}"
+       class="btn-export">
+      ↓ Export CSV
+    </a>
+    {% endif %}
+  </div>
+
+  <!-- ── Results table ── -->
+  {% if rows %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Company</th>
+          <th>Date reported</th>
+          <th>Records affected</th>
+          <th>Industry</th>
+          <th>Country</th>
+          <th>Severity</th>
+          <th>Data types</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td class="td-company">
+            {% if row.breach_id %}
+              <a href="/breaches/{{ row.id }}-{{ row.company_name | lower | replace(' ', '-') }}">
+                {{ row.company_name or '—' }}
+              </a>
+            {% else %}
+              {{ row.company_name or '—' }}
+            {% endif %}
+          </td>
+
+          <td>{{ row.date_reported or '—' }}</td>
+
+          <td>
+            {% if row.records_affected %}
+              {{ '{:,}'.format(row.records_affected) }}
+            {% elif row.records_affected_range %}
+              {{ row.records_affected_range }}
+            {% else %}
+              Unknown
+            {% endif %}
+          </td>
+
+          <td>{{ row.industry_primary or '—' }}</td>
+
+          <td>{{ row.headquarters_country or '—' }}</td>
+
+          <td>
+            {% set s = row.severity_score %}
+            {% if s %}
+              {% if s <= 3 %}
+                <span class="sev sev-low">{{ s }}</span>
+              {% elif s <= 6 %}
+                <span class="sev sev-medium">{{ s }}</span>
+              {% elif s <= 8 %}
+                <span class="sev sev-high">{{ s }}</span>
+              {% else %}
+                <span class="sev sev-critical">{{ s }}</span>
+              {% endif %}
+            {% else %}
+              —
+            {% endif %}
+          </td>
+
+          <td>
+            {% if row.data_types_exposed %}
+              {% for tag in row.data_types_exposed.replace('|', ',').split(',') | map('trim') | list %}
+                {% if tag %}<span class="tag">{{ tag }}</span>{% endif %}
+              {% endfor %}
+            {% else %}
+              —
+            {% endif %}
+          </td>
+
+          <td>
+            {% if row.breach_id %}
+            <a href="/breaches/{{ row.id }}-{{ row.company_name | lower | replace(' ', '-') }}"
+               style="color:#4f46e5; font-size:.82rem; white-space:nowrap;">
+              View →
+            </a>
+            {% endif %}
+          </td>
+
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% elif not error %}
+  <div class="state-empty">
+    <div style="font-size:2.5rem;">🔍</div>
+    <p>No breaches match your filters.</p>
+    <p><a href="/portal/breaches" style="color:#4f46e5;">Clear filters</a> to see all results.</p>
+  </div>
+  {% endif %}
+
+  <!-- ── Pagination ── -->
+  {% if total_pages > 1 %}
+  <nav class="pagination" aria-label="Results pages">
+
+    <a href="?q={{ q }}&industry={{ industry }}&country={{ country }}&date_from={{ date_from }}&date_to={{ date_to }}&severity_min={{ severity_min }}&page={{ page - 1 }}"
+       class="page-btn {% if page <= 1 %}page-btn--disabled{% endif %}"
+       aria-label="Previous page">‹</a>
+
+    {% set start_page = [1, page - 2] | max %}
+    {% set end_page   = [total_pages, page + 2] | min %}
+
+    {% if start_page > 1 %}
+      <a href="?q={{ q }}&industry={{ industry }}&country={{ country }}&date_from={{ date_from }}&date_to={{ date_to }}&severity_min={{ severity_min }}&page=1" class="page-btn">1</a>
+      {% if start_page > 2 %}<span class="page-btn page-btn--disabled">…</span>{% endif %}
+    {% endif %}
+
+    {% for p in range(start_page, end_page + 1) %}
+      <a href="?q={{ q }}&industry={{ industry }}&country={{ country }}&date_from={{ date_from }}&date_to={{ date_to }}&severity_min={{ severity_min }}&page={{ p }}"
+         class="page-btn {% if p == page %}page-btn--active{% endif %}">{{ p }}</a>
+    {% endfor %}
+
+    {% if end_page < total_pages %}
+      {% if end_page < total_pages - 1 %}<span class="page-btn page-btn--disabled">…</span>{% endif %}
+      <a href="?q={{ q }}&industry={{ industry }}&country={{ country }}&date_from={{ date_from }}&date_to={{ date_to }}&severity_min={{ severity_min }}&page={{ total_pages }}" class="page-btn">{{ total_pages }}</a>
+    {% endif %}
+
+    <a href="?q={{ q }}&industry={{ industry }}&country={{ country }}&date_from={{ date_from }}&date_to={{ date_to }}&severity_min={{ severity_min }}&page={{ page + 1 }}"
+       class="page-btn {% if page >= total_pages %}page-btn--disabled{% endif %}"
+       aria-label="Next page">›</a>
+
+  </nav>
+  {% endif %}
+
+</div>
+</main>
+
+<script src="/static/js/portal.js"></script>
+</body>
+</html>

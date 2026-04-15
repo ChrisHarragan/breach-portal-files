@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — Breach Signal</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='28'>⚡</text></svg>">
+  <link rel="stylesheet" href="/static/css/portal.css">
+  <style>
+    /* ── Dashboard-specific styles ── */
+    .dash-wrap {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 2.5rem 1.25rem 4rem;
+    }
+    .dash-welcome {
+      margin-bottom: 2rem;
+    }
+    .dash-welcome h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--text, #0f172a);
+      margin: 0 0 .25rem;
+    }
+    .dash-welcome p {
+      color: var(--text-muted, #64748b);
+      margin: 0;
+      font-size: .95rem;
+    }
+
+    /* Success banner (shown after Stripe redirect) */
+    .dash-banner {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      border-radius: 10px;
+      padding: .9rem 1.2rem;
+      margin-bottom: 2rem;
+      font-size: .9rem;
+      color: #166534;
+    }
+    .dash-banner-icon { font-size: 1.2rem; flex-shrink: 0; }
+
+    /* Cards grid */
+    .dash-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin-bottom: 2rem;
+    }
+    @media (max-width: 600px) { .dash-grid { grid-template-columns: 1fr; } }
+
+    .dash-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 1.4rem 1.5rem;
+    }
+    .dash-card-label {
+      font-size: .72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--text-muted, #64748b);
+      margin: 0 0 .6rem;
+    }
+    .dash-card-value {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text, #0f172a);
+      margin: 0 0 .35rem;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+    .dash-card-sub {
+      font-size: .82rem;
+      color: var(--text-muted, #64748b);
+      margin: 0;
+    }
+
+    /* Status badge */
+    .badge {
+      display: inline-block;
+      font-size: .7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      padding: .2rem .55rem;
+      border-radius: 99px;
+    }
+    .badge-active   { background: #dcfce7; color: #166534; }
+    .badge-inactive { background: #fee2e2; color: #991b1b; }
+    .badge-trial    { background: #fef9c3; color: #854d0e; }
+
+    /* Plan badge */
+    .plan-tag {
+      display: inline-block;
+      font-size: .72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      padding: .25rem .65rem;
+      border-radius: 6px;
+      background: #ede9fe;
+      color: #5b21b6;
+    }
+
+    /* Quick links */
+    .dash-links-title {
+      font-size: .85rem;
+      font-weight: 600;
+      color: var(--text-muted, #64748b);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin: 0 0 .9rem;
+    }
+    .dash-links {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: .75rem;
+    }
+    .dash-link-card {
+      display: flex;
+      align-items: center;
+      gap: .9rem;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      text-decoration: none;
+      color: var(--text, #0f172a);
+      font-weight: 500;
+      font-size: .9rem;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .dash-link-card:hover {
+      border-color: #a78bfa;
+      box-shadow: 0 2px 8px rgba(139,92,246,.12);
+    }
+    .dash-link-icon {
+      font-size: 1.3rem;
+      flex-shrink: 0;
+    }
+    .dash-link-desc {
+      font-size: .78rem;
+      color: var(--text-muted, #64748b);
+      margin-top: .1rem;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Authenticated nav ── -->
+<nav class="portal-nav">
+  <div class="nav-inner">
+    <a href="/portal/dashboard" class="nav-logo">Breach<span class="signal">Signal</span></a>
+    <div class="nav-right">
+      <span class="nav-link" style="color:var(--text-muted,#64748b); cursor:default;">{{ email }}</span>
+      <a href="/auth/logout" class="nav-link">Sign out</a>
+    </div>
+  </div>
+</nav>
+
+<main class="main-content">
+<div class="dash-wrap">
+
+  <!-- New-subscriber success banner (only shown after Stripe redirect) -->
+  {% if new_subscriber %}
+  <div class="dash-banner">
+    <span class="dash-banner-icon">🎉</span>
+    <div>
+      <strong>You're all set!</strong>
+      Your <strong>{{ plan_display }}</strong> subscription is now active.
+      Check your email for a magic link to set your password.
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Welcome -->
+  <div class="dash-welcome">
+    <h1>Welcome back{% if email %}, {{ email.split('@')[0] | title }}{% endif %}</h1>
+    <p>Here's your Breach Signal account at a glance.</p>
+  </div>
+
+  <!-- Subscription cards -->
+  <div class="dash-grid">
+
+    <div class="dash-card">
+      <p class="dash-card-label">Current Plan</p>
+      <p class="dash-card-value">
+        <span class="plan-tag">{{ plan_display }}</span>
+      </p>
+      <p class="dash-card-sub">
+        {% if billing_period %}{{ billing_period }}{% else %}Monthly billing{% endif %}
+      </p>
+    </div>
+
+    <div class="dash-card">
+      <p class="dash-card-label">Subscription Status</p>
+      <p class="dash-card-value">
+        <span class="badge badge-{{ status }}">{{ status | title }}</span>
+      </p>
+      <p class="dash-card-sub">
+        {% if period_end %}Renews {{ period_end }}{% else %}Auto-renews each billing cycle{% endif %}
+      </p>
+    </div>
+
+  </div>
+
+  <!-- Quick links -->
+  <p class="dash-links-title">Quick Access</p>
+  <div class="dash-links">
+
+    <a href="/breaches/" class="dash-link-card">
+      <span class="dash-link-icon">🔍</span>
+      <div>
+        <div>Search Breaches</div>
+        <div class="dash-link-desc">Browse the full incident database</div>
+      </div>
+    </a>
+
+    <a href="/portal/account" class="dash-link-card">
+      <span class="dash-link-icon">⚙️</span>
+      <div>
+        <div>Account Settings</div>
+        <div class="dash-link-desc">Password, billing, notifications</div>
+      </div>
+    </a>
+
+    <a href="https://breachsignals.netlify.app/pricing/" class="dash-link-card">
+      <span class="dash-link-icon">📈</span>
+      <div>
+        <div>Upgrade Plan</div>
+        <div class="dash-link-desc">Compare plans and features</div>
+      </div>
+    </a>
+
+    <a href="mailto:support@breachsignals.com" class="dash-link-card">
+      <span class="dash-link-icon">💬</span>
+      <div>
+        <div>Get Support</div>
+        <div class="dash-link-desc">Email our team</div>
+      </div>
+    </a>
+
+  </div>
+
+</div>
+</main>
+
+<script src="/static/js/portal.js"></script>
+</body>
+</html>
