@@ -1,6 +1,6 @@
 """
-Breach search router — mounts at /portal/breaches
-Add to your main app with:  app.include_router(breaches_router)
+Breach search router — public, no auth required.
+Mounts at /portal/breaches via:  app.include_router(breaches_router)
 """
 
 import csv
@@ -11,7 +11,7 @@ from datetime import date
 
 import requests as http
 from fastapi import APIRouter, Request
-from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 
 log = logging.getLogger(__name__)
@@ -26,9 +26,6 @@ SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
 
 PAGE_SIZE = 50
 
-# Plans that are allowed to access search (anything above Starter)
-ALLOWED_PLANS = {"growth", "professional", "enterprise"}
-
 INDUSTRIES = [
     "Education", "Energy", "Financial", "Financial Services", "Government",
     "Healthcare", "Insurance", "Legal", "Manufacturing", "Media",
@@ -41,14 +38,12 @@ COUNTRIES = [
     "South Korea", "Spain", "Sweden", "United Kingdom", "United States",
 ]
 
-# Columns returned for search results
 SELECT_COLS = (
     "id,company_name,date_reported,records_affected,records_affected_range,"
     "industry_primary,headquarters_country,severity_score,"
     "data_types_exposed,primary_incident_type,breach_id"
 )
 
-# Columns included in CSV export
 EXPORT_COLS = [
     "company_name", "date_reported", "records_affected", "records_affected_range",
     "industry_primary", "headquarters_country", "severity_score",
@@ -73,7 +68,6 @@ def _supa_headers(count: bool = False) -> dict:
 def _build_params(q: str, industry: str, country: str,
                   date_from: str, date_to: str, severity_min: int,
                   limit: int, offset: int, select: str) -> dict:
-    """Build Supabase REST query params from filter values."""
     params = {
         "select": select,
         "order":  "date_reported.desc.nullslast",
@@ -89,8 +83,6 @@ def _build_params(q: str, industry: str, country: str,
     if date_from:
         params["date_reported"] = f"gte.{date_from}"
     if date_to:
-        # If both from and to are set, Supabase REST only supports one value
-        # per key — use and= for range queries
         if date_from:
             params["and"] = f"(date_reported.gte.{date_from},date_reported.lte.{date_to})"
             del params["date_reported"]
@@ -99,29 +91,6 @@ def _build_params(q: str, industry: str, country: str,
     if severity_min and severity_min > 1:
         params["severity_score"] = f"gte.{severity_min}"
     return params
-
-
-def _get_subscription(user_id: str) -> dict | None:
-    if not SUPABASE_URL or not SUPABASE_KEY:
-        return None
-    try:
-        r = http.get(
-            f"{SUPABASE_URL}/rest/v1/subscriptions",
-            headers=_supa_headers(),
-            params={
-                "user_id": f"eq.{user_id}",
-                "order":   "created_at.desc",
-                "limit":   "1",
-                "select":  "plan,status",
-            },
-            timeout=5,
-        )
-        r.raise_for_status()
-        rows = r.json()
-        return rows[0] if rows else None
-    except Exception as exc:
-        log.warning("Subscription lookup failed: %s", exc)
-        return None
 
 
 def _query_breaches(params: dict, count: bool = False):
@@ -134,39 +103,10 @@ def _query_breaches(params: dict, count: bool = False):
     r.raise_for_status()
     total = None
     if count:
-        cr = r.headers.get("content-range", "")  # e.g. "0-49/4711"
+        cr = r.headers.get("content-range", "")
         if "/" in cr:
             total = int(cr.split("/")[1])
     return r.json(), total
-
-
-# ---------------------------------------------------------------------------
-# Auth + tier guard (reusable)
-# ---------------------------------------------------------------------------
-
-def _check_access(request: Request):
-    """
-    Returns (user_id, email, plan) or a RedirectResponse.
-    Blocks unauthenticated users and Starter subscribers.
-    """
-    user_id = request.session.get("user_id")
-    email   = request.session.get("email")
-
-    if not user_id:
-        host = request.headers.get("host", "")
-        return RedirectResponse(
-            url=f"/auth/login?next=http://{host}/portal/breaches",
-            status_code=302,
-        )
-
-    sub  = _get_subscription(user_id)
-    plan = (sub or {}).get("plan", "")
-
-    if plan not in ALLOWED_PLANS:
-        # Starter or no plan → upgrade wall
-        return RedirectResponse(url="/portal/upgrade", status_code=302)
-
-    return user_id, email, plan
 
 
 # ---------------------------------------------------------------------------
@@ -175,7 +115,7 @@ def _check_access(request: Request):
 
 @breaches_router.get("/portal/breaches", response_class=HTMLResponse)
 async def breach_search(
-    request: Request,
+    request:      Request,
     q:            str = "",
     industry:     str = "",
     country:      str = "",
@@ -184,11 +124,6 @@ async def breach_search(
     severity_min: int = 1,
     page:         int = 1,
 ):
-    access = _check_access(request)
-    if isinstance(access, RedirectResponse):
-        return access
-    user_id, email, plan = access
-
     page   = max(1, page)
     offset = (page - 1) * PAGE_SIZE
 
@@ -206,26 +141,22 @@ async def breach_search(
         log.error("Breach search failed: %s", exc)
         error = "Search unavailable — please try again."
 
-    total_pages = max(1, -(-total // PAGE_SIZE))  # ceiling division
+    total_pages = max(1, -(-total // PAGE_SIZE))
 
     return templates.TemplateResponse("breaches.html", {
         "request":      request,
-        "email":        email or "",
-        "plan":         plan,
         "rows":         rows,
         "total":        total,
         "page":         page,
         "total_pages":  total_pages,
         "page_size":    PAGE_SIZE,
         "error":        error,
-        # Filter state (so form stays populated)
         "q":            q,
         "industry":     industry,
         "country":      country,
         "date_from":    date_from,
         "date_to":      date_to,
         "severity_min": severity_min,
-        # Dropdown options
         "industries":   INDUSTRIES,
         "countries":    COUNTRIES,
     })
@@ -245,11 +176,6 @@ async def breach_export(
     date_to:      str = "",
     severity_min: int = 1,
 ):
-    access = _check_access(request)
-    if isinstance(access, RedirectResponse):
-        return access
-    _user_id, _email, _plan = access
-
     params = _build_params(
         q, industry, country, date_from, date_to, severity_min,
         limit=5000, offset=0,
