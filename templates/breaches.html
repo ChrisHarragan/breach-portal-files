@@ -245,6 +245,10 @@
     <a href="/portal/breaches" class="nav-logo">Breach<span class="signal">Signal</span></a>
     <div class="nav-right">
       <a href="/portal/breaches" class="nav-link" style="color:#4f46e5;font-weight:600;">Breaches</a>
+      {% if user %}
+        <span class="nav-link" style="color:#94a3b8;">{{ user.email }}</span>
+        <a href="/auth/logout" class="nav-link">Sign out</a>
+      {% endif %}
     </div>
   </div>
 </nav>

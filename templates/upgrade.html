@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upgrade Required — Breach Signal</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='28'>⚡</text></svg>">
+  <link rel="stylesheet" href="/static/css/portal.css">
+  <style>
+    .upgrade-wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+    .upgrade-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 3rem 2rem;
+      width: 100%;
+      max-width: 480px;
+      text-align: center;
+      box-shadow: 0 4px 24px rgba(0,0,0,.06);
+    }
+    .upgrade-icon { font-size: 2.5rem; margin-bottom: 1.25rem; }
+    .upgrade-card h1 {
+      font-size: 1.4rem;
+      font-weight: 800;
+      margin-bottom: .6rem;
+    }
+    .upgrade-card p {
+      font-size: .95rem;
+      color: #64748b;
+      line-height: 1.6;
+      margin-bottom: 2rem;
+    }
+    .plan-badge {
+      display: inline-block;
+      background: #f1f5f9;
+      color: #475569;
+      padding: .2rem .65rem;
+      border-radius: 6px;
+      font-size: .8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-bottom: 1.5rem;
+    }
+    .btn-upgrade {
+      display: inline-block;
+      background: #4f46e5;
+      color: #fff;
+      padding: .75rem 2rem;
+      border-radius: 8px;
+      font-size: .95rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background .15s;
+      margin-bottom: 1rem;
+    }
+    .btn-upgrade:hover { background: #4338ca; }
+    .logout-link {
+      display: block;
+      font-size: .85rem;
+      color: #94a3b8;
+      text-decoration: none;
+      margin-top: .75rem;
+    }
+    .logout-link:hover { color: #64748b; }
+    .features {
+      text-align: left;
+      background: #f8fafc;
+      border-radius: 10px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .features li {
+      font-size: .9rem;
+      color: #374151;
+      padding: .3rem 0;
+      list-style: none;
+    }
+    .features li::before { content: "✓  "; color: #4f46e5; font-weight: 700; }
+  </style>
+</head>
+<body>
+<div class="upgrade-wrap">
+  <div class="upgrade-card">
+    <div class="upgrade-icon">🔒</div>
+    <div class="plan-badge">{{ user.plan or "Starter" }} plan</div>
+    <h1>Upgrade to access the portal</h1>
+    <p>The breach intelligence portal is available on Growth and Professional plans.
+       Your current plan does not include portal access.</p>
+
+    <ul class="features">
+      <li>Search 4,500+ breach records</li>
+      <li>Filter by industry, country, severity</li>
+      <li>Full incident summaries</li>
+      <li>CSV export</li>
+      <li>Real-time breach alerts</li>
+    </ul>
+
+    <a href="https://breachsignal.com/pricing" class="btn-upgrade">View plans &amp; pricing</a>
+    <a href="/auth/logout" class="logout-link">Sign out ({{ user.email }})</a>
+  </div>
+</div>
+</body>
+</html>

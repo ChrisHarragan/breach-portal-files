@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Signing in — Breach Signal</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='28'>⚡</text></svg>">
+  <link rel="stylesheet" href="/static/css/portal.css">
+  <style>
+    .cb-wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+    .cb-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: 0 4px 24px rgba(0,0,0,.06);
+    }
+    .cb-logo {
+      font-size: 1.4rem;
+      font-weight: 800;
+      letter-spacing: -.02em;
+      color: #0f172a;
+      text-decoration: none;
+      display: block;
+      margin-bottom: 2rem;
+    }
+    .cb-logo .signal { color: #4f46e5; }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid #e2e8f0;
+      border-top-color: #4f46e5;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      margin: 0 auto 1.25rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .cb-card h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: .5rem; }
+    .cb-card p  { font-size: .9rem; color: #64748b; }
+    .cb-error {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #991b1b;
+      border-radius: 8px;
+      padding: .75rem 1rem;
+      font-size: .875rem;
+      margin-top: 1rem;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+<div class="cb-wrap">
+  <div class="cb-card">
+    <a href="/" class="cb-logo">Breach<span class="signal">Signal</span></a>
+    <div class="spinner" id="spinner"></div>
+    <h2 id="cb-title">Signing you in…</h2>
+    <p id="cb-msg">Please wait a moment.</p>
+    <div class="cb-error" id="cb-error"></div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    function showError(msg) {
+      document.getElementById("spinner").style.display = "none";
+      document.getElementById("cb-title").textContent = "Sign-in failed";
+      document.getElementById("cb-msg").textContent = "";
+      var el = document.getElementById("cb-error");
+      el.textContent = msg;
+      el.style.display = "block";
+    }
+
+    // Parse the hash fragment: #access_token=...&token_type=bearer&...
+    var hash = window.location.hash.slice(1);
+    if (!hash) {
+      // Some Supabase configurations put params in the query string instead
+      hash = window.location.search.slice(1);
+    }
+
+    var params = {};
+    hash.split("&").forEach(function (pair) {
+      var parts = pair.split("=");
+      if (parts.length === 2) {
+        params[decodeURIComponent(parts[0])] = decodeURIComponent(parts[1]);
+      }
+    });
+
+    var accessToken = params["access_token"];
+    if (!accessToken) {
+      showError("No access token found in the link. Please request a new sign-in link.");
+      return;
+    }
+
+    fetch("/auth/session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ access_token: accessToken }),
+    })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (data.redirect) {
+          window.location.href = data.redirect;
+        } else {
+          showError(data.error || "Sign-in failed. Please try again.");
+        }
+      })
+      .catch(function () {
+        showError("Network error. Please try again.");
+      });
+  })();
+</script>
+</body>
+</html>

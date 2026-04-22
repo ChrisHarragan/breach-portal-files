@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In — Breach Signal</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='28'>⚡</text></svg>">
+  <link rel="stylesheet" href="/static/css/portal.css">
+  <style>
+    .login-wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+    .login-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 4px 24px rgba(0,0,0,.06);
+    }
+    .login-logo {
+      font-size: 1.4rem;
+      font-weight: 800;
+      letter-spacing: -.02em;
+      color: #0f172a;
+      text-decoration: none;
+      display: block;
+      margin-bottom: 2rem;
+    }
+    .login-logo .signal { color: #4f46e5; }
+    .login-card h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: .4rem;
+    }
+    .login-card p {
+      font-size: .9rem;
+      color: #64748b;
+      margin-bottom: 1.75rem;
+      line-height: 1.5;
+    }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label {
+      display: block;
+      font-size: .78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: #64748b;
+      margin-bottom: .4rem;
+    }
+    .form-group input[type="email"] {
+      width: 100%;
+      height: 44px;
+      padding: 0 .875rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: .95rem;
+      color: #0f172a;
+      background: #f8fafc;
+      transition: border-color .15s, box-shadow .15s;
+      outline: none;
+    }
+    .form-group input[type="email"]:focus {
+      border-color: #4f46e5;
+      box-shadow: 0 0 0 3px rgba(79,70,229,.12);
+      background: #fff;
+    }
+    .btn-primary {
+      width: 100%;
+      height: 44px;
+      background: #4f46e5;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: .95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .15s;
+      margin-top: .5rem;
+    }
+    .btn-primary:hover { background: #4338ca; }
+    .error-msg {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #991b1b;
+      border-radius: 8px;
+      padding: .75rem 1rem;
+      font-size: .875rem;
+      margin-bottom: 1rem;
+    }
+    .success-card {
+      text-align: center;
+      padding: 1rem 0;
+    }
+    .success-icon {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+    .success-card h2 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: .5rem;
+    }
+    .success-card p {
+      margin-bottom: 0;
+    }
+    .resend-link {
+      display: block;
+      text-align: center;
+      margin-top: 1.25rem;
+      font-size: .85rem;
+      color: #64748b;
+    }
+    .resend-link a { color: #4f46e5; text-decoration: none; }
+    .resend-link a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+<div class="login-wrap">
+  <div class="login-card">
+    <a href="/" class="login-logo">Breach<span class="signal">Signal</span></a>
+
+    {% if sent %}
+      <div class="success-card">
+        <div class="success-icon">📬</div>
+        <h2>Check your inbox</h2>
+        <p>We sent a sign-in link to <strong>{{ email }}</strong>.<br>
+           Click the link in the email to access the portal.</p>
+      </div>
+      <span class="resend-link">
+        Wrong address? <a href="/auth/login">Try again</a>
+      </span>
+    {% else %}
+      <h1>Sign in to the portal</h1>
+      <p>Enter your email and we'll send you a magic link — no password needed.</p>
+
+      {% if error %}
+        <div class="error-msg">{{ error }}</div>
+      {% endif %}
+
+      <form method="POST" action="/auth/login">
+        <div class="form-group">
+          <label for="email">Work email</label>
+          <input type="email" id="email" name="email"
+                 placeholder="you@company.com" required autofocus>
+        </div>
+        <button type="submit" class="btn-primary">Send sign-in link</button>
+      </form>
+    {% endif %}
+  </div>
+</div>
+</body>
+</html>

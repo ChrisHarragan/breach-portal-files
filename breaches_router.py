@@ -113,6 +113,9 @@ def _query_breaches(params: dict, count: bool = False):
 # Search route
 # ---------------------------------------------------------------------------
 
+ALLOWED_PLANS = {"growth", "professional"}
+
+
 @breaches_router.get("/portal/breaches", response_class=HTMLResponse)
 async def breach_search(
     request:      Request,
@@ -124,6 +127,18 @@ async def breach_search(
     severity_min: int = 1,
     page:         int = 1,
 ):
+    # ── Auth gate ──────────────────────────────────────────────────────────
+    user = request.session.get("user")
+    if not user:
+        return RedirectResponse("/auth/login", status_code=303)
+
+    if user.get("plan", "").lower() not in ALLOWED_PLANS:
+        return templates.TemplateResponse("upgrade.html", {
+            "request": request,
+            "user":    user,
+        })
+    # ───────────────────────────────────────────────────────────────────────
+
     page   = max(1, page)
     offset = (page - 1) * PAGE_SIZE
 
@@ -159,6 +174,7 @@ async def breach_search(
         "severity_min": severity_min,
         "industries":   INDUSTRIES,
         "countries":    COUNTRIES,
+        "user":         user,
     })
 
 
