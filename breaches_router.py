@@ -208,24 +208,35 @@ async def breach_export(
 # Breach detail route
 # ---------------------------------------------------------------------------
 
+DETAIL_COLS = (
+    "id,company_name,date_reported,severity_score,primary_incident_type,"
+    "incident_summary,records_affected,industry_primary,headquarters_country,"
+    "data_types_exposed,source_url"
+)
+
+
 @breaches_router.get("/breaches/{breach_slug}", response_class=HTMLResponse)
 async def breach_detail(request: Request, breach_slug: str):
     breach_id = breach_slug[:36]  # UUID is always 36 chars
+    log.info("detail: slug=%r  extracted_id=%r", breach_slug, breach_id)
 
     resp = http.get(
         f"{SUPABASE_URL}/rest/v1/breaches",
         headers=_supa_headers(),
-        params={"id": f"eq.{breach_id}", "select": "*"},
+        params={"id": f"eq.{breach_id}", "select": DETAIL_COLS},
         timeout=10,
     )
+    log.info("detail: supabase status=%s body=%r", resp.status_code, resp.text[:300])
     rows = resp.json() if resp.ok else []
-    if not rows:
+    if not isinstance(rows, list) or not rows:
+        log.warning("detail: no rows found for id=%r", breach_id)
         return HTMLResponse("<h1>404 – Breach not found</h1>", status_code=404)
 
     breach = rows[0]
+    raw_types = breach.get("data_types_exposed") or ""
     breach["data_types_list"] = [
         t.strip()
-        for t in (breach.get("data_types_exposed") or "").split(",")
+        for t in raw_types.replace("|", ",").split(",")
         if t.strip()
     ]
     breach["source_urls_list"] = [
