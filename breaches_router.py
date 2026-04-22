@@ -11,7 +11,7 @@ from datetime import date, timedelta
 
 import requests as http
 from fastapi import APIRouter, Request
-from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 
 log = logging.getLogger(__name__)
