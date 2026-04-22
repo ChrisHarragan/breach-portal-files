@@ -217,7 +217,7 @@ DETAIL_COLS = (
 
 @breaches_router.get("/breaches/{breach_slug}", response_class=HTMLResponse)
 async def breach_detail(request: Request, breach_slug: str):
-    breach_id = breach_slug[:36]  # UUID is always 36 chars
+    breach_id = breach_slug.split("-")[0]
     log.info("detail: slug=%r  extracted_id=%r", breach_slug, breach_id)
 
     resp = http.get(
