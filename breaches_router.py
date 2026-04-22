@@ -7,7 +7,7 @@ import csv
 import io
 import logging
 import os
-from datetime import date
+from datetime import date, timedelta
 
 import requests as http
 from fastapi import APIRouter, Request
@@ -202,3 +202,65 @@ async def breach_export(
         media_type="text/csv",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+# ---------------------------------------------------------------------------
+# Breach detail route
+# ---------------------------------------------------------------------------
+
+@breaches_router.get("/breaches/{breach_slug}", response_class=HTMLResponse)
+async def breach_detail(request: Request, breach_slug: str):
+    breach_id = breach_slug[:36]  # UUID is always 36 chars
+
+    resp = http.get(
+        f"{SUPABASE_URL}/rest/v1/breaches",
+        headers=_supa_headers(),
+        params={"id": f"eq.{breach_id}", "select": "*"},
+        timeout=10,
+    )
+    rows = resp.json() if resp.ok else []
+    if not rows:
+        return HTMLResponse("<h1>404 – Breach not found</h1>", status_code=404)
+
+    breach = rows[0]
+    breach["data_types_list"] = [
+        t.strip()
+        for t in (breach.get("data_types_exposed") or "").split(",")
+        if t.strip()
+    ]
+    breach["source_urls_list"] = [
+        u.strip()
+        for u in (breach.get("source_url") or "").split("\n")
+        if u.strip()
+    ]
+
+    since = (date.today() - timedelta(days=90)).isoformat()
+    rel_resp = http.get(
+        f"{SUPABASE_URL}/rest/v1/breaches",
+        headers=_supa_headers(),
+        params={
+            "company_name": f"eq.{breach['company_name']}",
+            "date_reported": f"gte.{since}",
+            "id": f"neq.{breach_id}",
+            "select": "id,company_name,date_reported,severity_score,primary_incident_type",
+            "limit": "5",
+        },
+        timeout=10,
+    )
+    related = rel_resp.json() if rel_resp.ok else []
+
+    summary = breach.get("incident_summary") or ""
+    meta_desc = summary[:150].rstrip() + ("…" if len(summary) > 150 else "")
+    page_title = (
+        f"{breach['company_name']} Data Breach"
+        f" – {breach.get('date_reported', '')} | Breach Signal"
+    )
+
+    return templates.TemplateResponse("breach_detail.html", {
+        "request":    request,
+        "breach":     breach,
+        "related":    related,
+        "page_title": page_title,
+        "meta_desc":  meta_desc,
+        "canonical":  str(request.url),
+    })

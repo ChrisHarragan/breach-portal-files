@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ page_title }}</title>
+  <meta name="description" content="{{ meta_desc }}">
+  <link rel="canonical" href="{{ canonical }}">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='28'>⚡</text></svg>">
+
+  <!-- Open Graph -->
+  <meta property="og:type"        content="article">
+  <meta property="og:title"       content="{{ page_title }}">
+  <meta property="og:description" content="{{ meta_desc }}">
+  <meta property="og:url"         content="{{ canonical }}">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card"        content="summary">
+  <meta name="twitter:title"       content="{{ page_title }}">
+  <meta name="twitter:description" content="{{ meta_desc }}">
+
+  <link rel="stylesheet" href="/static/css/portal.css">
+  <style>
+    .detail-wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 4rem;
+    }
+
+    /* Back link */
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      font-size: .85rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      margin-bottom: 1.75rem;
+      transition: color .15s;
+    }
+    .back-link:hover { color: var(--text); }
+
+    /* Hero */
+    .hero { margin-bottom: 2rem; }
+    .hero h1 {
+      font-size: 1.9rem;
+      font-weight: 800;
+      letter-spacing: -.02em;
+      margin-bottom: .6rem;
+    }
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: .6rem;
+      color: var(--text-muted);
+      font-size: .88rem;
+    }
+    .hero-meta .dot { color: var(--border); }
+
+    /* Severity badge */
+    .sev-badge {
+      display: inline-block;
+      padding: .2rem .65rem;
+      border-radius: 999px;
+      font-size: .78rem;
+      font-weight: 700;
+      letter-spacing: .02em;
+    }
+    .sev-low      { background: #d1fae5; color: #065f46; }
+    .sev-medium   { background: #fef3c7; color: #92400e; }
+    .sev-high     { background: #fee2e2; color: #991b1b; }
+    .sev-critical { background: #7f1d1d; color: #fff; }
+
+    /* Grid layout */
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 300px;
+      gap: 1.5rem;
+      align-items: start;
+    }
+    @media (max-width: 780px) {
+      .detail-grid { grid-template-columns: 1fr; }
+      .hero h1 { font-size: 1.4rem; }
+    }
+
+    /* Cards */
+    .card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+    .card-title {
+      font-size: .72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+    }
+
+    /* Summary */
+    .summary-body p {
+      margin-bottom: .9rem;
+      line-height: 1.75;
+      color: var(--text);
+    }
+    .summary-body p:last-child { margin-bottom: 0; }
+
+    /* Data type tags */
+    .tag-list { display: flex; flex-wrap: wrap; gap: .4rem; }
+    .tag {
+      background: #f1f5f9;
+      color: #334155;
+      padding: .25rem .65rem;
+      border-radius: 6px;
+      font-size: .8rem;
+      font-weight: 500;
+    }
+
+    /* Source links */
+    .source-link {
+      display: block;
+      color: var(--accent);
+      font-size: .83rem;
+      word-break: break-all;
+      margin-bottom: .4rem;
+      text-decoration: none;
+    }
+    .source-link:hover { text-decoration: underline; }
+
+    /* Share buttons */
+    .share-row { display: flex; gap: .6rem; flex-wrap: wrap; }
+    .share-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      padding: .45rem 1rem;
+      border-radius: 8px;
+      font-size: .82rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: opacity .15s;
+    }
+    .share-btn:hover { opacity: .85; }
+    .share-x        { background: #000; color: #fff; }
+    .share-linkedin { background: #0a66c2; color: #fff; }
+
+    /* Sidebar stats */
+    .stat-block { margin-bottom: 1.25rem; }
+    .stat-block:last-child { margin-bottom: 0; }
+    .stat-label {
+      font-size: .72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--text-muted);
+      margin-bottom: .2rem;
+    }
+    .stat-value {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    /* Related breaches */
+    .related-item {
+      padding: .65rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .related-item:last-child { border-bottom: none; }
+    .related-item a {
+      font-weight: 600;
+      font-size: .88rem;
+      color: var(--text);
+      text-decoration: none;
+    }
+    .related-item a:hover { color: var(--accent); }
+    .related-meta {
+      font-size: .78rem;
+      color: var(--text-muted);
+      margin-top: .15rem;
+    }
+
+    .empty-related {
+      font-size: .85rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+<nav class="portal-nav">
+  <div class="nav-inner">
+    <a href="/portal/breaches" class="nav-logo">Breach<span class="signal">Signal</span></a>
+    <div class="nav-right">
+      <a href="/portal/breaches" class="nav-link">Breaches</a>
+    </div>
+  </div>
+</nav>
+
+<main class="main-content">
+<div class="detail-wrap">
+
+  <a href="/portal/breaches" class="back-link">← Back to Search</a>
+
+  <!-- Hero -->
+  <div class="hero">
+    <h1>{{ breach.company_name }}</h1>
+    <div class="hero-meta">
+      {% if breach.date_reported %}
+        <span>{{ breach.date_reported }}</span>
+        <span class="dot">·</span>
+      {% endif %}
+
+      {% if breach.severity_score %}
+        {% set s = breach.severity_score | int %}
+        {% if s <= 3 %}
+          <span class="sev-badge sev-low">Severity {{ s }}/10 &mdash; Low</span>
+        {% elif s <= 6 %}
+          <span class="sev-badge sev-medium">Severity {{ s }}/10 &mdash; Medium</span>
+        {% elif s <= 9 %}
+          <span class="sev-badge sev-high">Severity {{ s }}/10 &mdash; High</span>
+        {% else %}
+          <span class="sev-badge sev-critical">Severity {{ s }}/10 &mdash; Critical</span>
+        {% endif %}
+        <span class="dot">·</span>
+      {% endif %}
+
+      {% if breach.primary_incident_type %}
+        <span>{{ breach.primary_incident_type | title }}</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="detail-grid">
+
+    <!-- Left column -->
+    <div>
+
+      {% if breach.incident_summary %}
+      <div class="card">
+        <div class="card-title">Incident Summary</div>
+        <div class="summary-body">
+          {% for para in breach.incident_summary.split('\n') %}
+            {% if para.strip() %}<p>{{ para.strip() }}</p>{% endif %}
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if breach.data_types_list %}
+      <div class="card">
+        <div class="card-title">Data Types Compromised</div>
+        <div class="tag-list">
+          {% for tag in breach.data_types_list %}
+            <span class="tag">{{ tag }}</span>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if breach.source_urls_list %}
+      <div class="card">
+        <div class="card-title">Sources</div>
+        {% for url in breach.source_urls_list %}
+          <a class="source-link" href="{{ url }}" target="_blank" rel="noopener noreferrer">{{ url }}</a>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- Share -->
+      <div class="share-row">
+        {% set share_text = breach.company_name ~ " data breach — " ~ meta_desc %}
+        <a class="share-btn share-x"
+           href="https://twitter.com/intent/tweet?text={{ (share_text)[:200] | urlencode }}&url={{ canonical | urlencode }}"
+           target="_blank" rel="noopener noreferrer">
+          Share on X
+        </a>
+        <a class="share-btn share-linkedin"
+           href="https://www.linkedin.com/sharing/share-offsite/?url={{ canonical | urlencode }}"
+           target="_blank" rel="noopener noreferrer">
+          Share on LinkedIn
+        </a>
+      </div>
+
+    </div>
+
+    <!-- Sidebar -->
+    <div>
+      <div class="card">
+        <div class="card-title">Details</div>
+
+        <div class="stat-block">
+          <div class="stat-label">Records Affected</div>
+          <div class="stat-value">{{ breach.records_affected or "Unknown" }}</div>
+        </div>
+
+        <div class="stat-block">
+          <div class="stat-label">Industry</div>
+          <div class="stat-value">{{ breach.industry_primary or "—" }}</div>
+        </div>
+
+        <div class="stat-block">
+          <div class="stat-label">Headquarters</div>
+          <div class="stat-value">{{ breach.headquarters_country or "—" }}</div>
+        </div>
+
+        {% if breach.date_reported %}
+        <div class="stat-block">
+          <div class="stat-label">Date Reported</div>
+          <div class="stat-value">{{ breach.date_reported }}</div>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="card">
+        <div class="card-title">Related Breaches</div>
+        {% if related %}
+          {% for r in related %}
+          <div class="related-item">
+            <a href="/breaches/{{ r.id }}-{{ r.company_name | lower | replace(' ', '-') }}">
+              {{ r.company_name }}
+            </a>
+            <div class="related-meta">
+              {% if r.date_reported %}{{ r.date_reported }}{% endif %}
+              {% if r.severity_score %} &middot; Severity {{ r.severity_score }}{% endif %}
+              {% if r.primary_incident_type %} &middot; {{ r.primary_incident_type | title }}{% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <p class="empty-related">No related breaches in the last 90 days.</p>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+
+</div>
+</main>
+
+</body>
+</html>
