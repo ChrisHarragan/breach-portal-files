@@ -97,13 +97,10 @@ async def send_magic_link(request: Request, email: str = Form(...)):
     redirect_to = f"{PORTAL_URL}/auth/callback"
 
     r = http.post(
-        f"{SUPABASE_URL}/auth/v1/admin/generate_link",
+        f"{SUPABASE_URL}/auth/v1/magiclink",
         headers=_supa_headers(),
-        json={
-            "type":  "magiclink",
-            "email": email,
-            "options": {"redirect_to": redirect_to},
-        },
+        params={"redirect_to": redirect_to},
+        json={"email": email, "create_user": False},
         timeout=10,
     )
     if not r.ok:
