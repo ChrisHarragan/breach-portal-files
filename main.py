@@ -51,6 +51,11 @@ async def health():
     return {"status": "ok"}
 
 
+@app.get("/google2bba8b6f5adab579.html", response_class=PlainTextResponse)
+async def gsc_verify():
+    return "google-site-verification: google2bba8b6f5adab579.html"
+
+
 @app.get("/robots.txt", response_class=PlainTextResponse)
 async def robots_txt():
     try:
